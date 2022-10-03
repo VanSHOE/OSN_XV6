@@ -48,6 +48,17 @@ TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' 
 	echo "***" 1>&2; exit 1; fi)
 endif
 
+SCHEDULER_MACRO = -D RR
+ifeq ($(SCHEDULER), FCFS)
+    SCHEDULER_MACRO = -D FCFS
+endif
+ifeq ($(SCHEDULER), PBS)
+    SCHEDULER_MACRO = -D PBS
+endif
+ifeq ($(SCHEDULER), MLFQ)
+    SCHEDULER_MACRO = -D MLFQ
+endif
+
 QEMU = qemu-system-riscv64
 
 CC = $(TOOLPREFIX)gcc
@@ -62,6 +73,7 @@ CFLAGS += -mcmodel=medany
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
 CFLAGS += -I.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+CFLAGS += $(SCHEDULER_MACRO)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)

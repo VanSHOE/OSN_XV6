@@ -124,6 +124,7 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+  p->createTime = ticks;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -452,6 +453,7 @@ scheduler(void)
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
+    #ifdef RR
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
@@ -461,13 +463,41 @@ scheduler(void)
         p->state = RUNNING;
         c->proc = p;
         swtch(&c->context, &p->context);
-
+      
         // Process is done running for now.
         // It should have changed its p->state before coming back.
         c->proc = 0;
       }
+
       release(&p->lock);
     }
+    #endif
+
+    #ifdef FCFS
+    struct proc *min = 0;
+    for (p = proc; p < &proc[NPROC]; p++)
+    {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE && (min == 0 || p->createTime < min->createTime))
+      {
+        min = p;
+      }
+      release(&p->lock);
+    }
+
+    if (min)
+    {
+      acquire(&min->lock);
+      if (min->state == RUNNABLE)
+      {
+        min->state = RUNNING;
+        c->proc = min;
+        swtch(&c->context, &min->context);
+        c->proc = 0;
+      }
+      release(&min->lock);
+    }
+    #endif
   }
 }
 
@@ -502,6 +532,9 @@ sched(void)
 void
 yield(void)
 {
+  #ifdef FCFS
+  return;
+  #endif
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
