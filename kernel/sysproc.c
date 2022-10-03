@@ -96,6 +96,7 @@ sys_trace(void)
   // get first arg
   int n;
   argint(0, &n);
-  printf("\nhiiinooo %d\n", n);
+
+  
   return -1;
 }
