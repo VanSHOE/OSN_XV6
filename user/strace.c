@@ -21,11 +21,11 @@ int main(int argc, char *argv[])
   }
   args[argc - 2] = '\0';
 
-  trace(mask);
   int pid = fork();
   
   if (pid == 0)
   {
+    trace(mask);
     exec(procName, args);
   }
   else

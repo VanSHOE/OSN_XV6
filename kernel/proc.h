@@ -96,6 +96,8 @@ struct proc {
   int timesScheduled;          // Number of times the process has been scheduled
   int niceness;                // Measures percentage of time the process sleeps
 
+  int trace;                   // Tracing
+
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
 

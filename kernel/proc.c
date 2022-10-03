@@ -127,6 +127,7 @@ found:
   p->createTime = ticks;
   p->priority = 60;
   p->timesScheduled = 0;
+  p->trace = 0;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -319,6 +320,7 @@ fork(void)
 
   acquire(&wait_lock);
   np->parent = p;
+  np->trace = np->parent->trace;
   release(&wait_lock);
 
   acquire(&np->lock);
