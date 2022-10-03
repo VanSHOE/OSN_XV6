@@ -125,6 +125,8 @@ found:
   p->pid = allocpid();
   p->state = USED;
   p->createTime = ticks;
+  p->priority = 60;
+  p->timesScheduled = 0;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){

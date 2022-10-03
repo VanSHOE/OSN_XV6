@@ -92,6 +92,9 @@ struct proc {
   int xstate;                  // Exit status to be returned to parent's wait
   int pid;                     // Process ID
   int createTime;              // Process creation time
+  int priority;                // Process priority
+  int timesScheduled;          // Number of times the process has been scheduled
+  int niceness;                // Measures percentage of time the process sleeps
 
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
