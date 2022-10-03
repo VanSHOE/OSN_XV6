@@ -102,3 +102,18 @@ sys_trace(void)
   myproc()->trace = mask;
   return 0;
 }
+
+uint64
+sys_settickets(void)
+{
+  int tickets;
+  argint(0, &tickets);
+  if(tickets < 1)
+  {
+    return -1;
+  }
+  printf("Tickets before: %d\n", myproc()->tickets);
+  myproc()->tickets = tickets;
+  printf("Tickets after: %d\n", myproc()->tickets);
+  return 0;
+}

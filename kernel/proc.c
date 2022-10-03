@@ -128,6 +128,7 @@ found:
   p->priority = 60;
   p->timesScheduled = 0;
   p->trace = 0;
+  p->tickets = 1;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -320,7 +321,11 @@ fork(void)
 
   acquire(&wait_lock);
   np->parent = p;
-  np->trace = np->parent->trace;
+  if(np->parent)
+  {
+    np->trace = np->parent->trace;
+    np->tickets = np->parent->tickets;
+  }
   release(&wait_lock);
 
   acquire(&np->lock);

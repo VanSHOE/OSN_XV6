@@ -95,6 +95,7 @@ struct proc {
   int priority;                // Process priority
   int timesScheduled;          // Number of times the process has been scheduled
   int niceness;                // Measures percentage of time the process sleeps
+  int tickets;                 // Number of tickets for lottery scheduler
 
   int trace;                   // Tracing
 
