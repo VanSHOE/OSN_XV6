@@ -93,6 +93,9 @@ sys_uptime(void)
 uint64
 sys_trace(void)
 {
-  printf("\nhiiinooo\n");
+  // get first arg
+  int n;
+  argint(0, &n);
+  printf("\nhiiinooo %d\n", n);
   return -1;
 }
