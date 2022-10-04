@@ -541,7 +541,7 @@ sched(void)
 void
 yield(void)
 {
-  #ifdef FCFS
+  #if defined(FCFS) || defined(PBS)
   return;
   #endif
   struct proc *p = myproc();

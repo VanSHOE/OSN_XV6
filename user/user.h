@@ -24,6 +24,7 @@ int sleep(int);
 int uptime(void);
 int trace(int);
 int settickets(int);
+int set_priority(int, int);
 
 // ulib.c
 int stat(const char*, struct stat*);

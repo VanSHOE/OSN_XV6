@@ -117,3 +117,18 @@ sys_settickets(void)
   printf("Tickets after: %d\n", myproc()->tickets);
   return 0;
 }
+
+uint64
+sys_set_priority(void)
+{
+  int priority, process_id;
+  argint(0, &priority);
+  argint(1, &process_id);
+  
+  // get proc
+  struct proc *p;
+
+
+
+  return 0;
+}
