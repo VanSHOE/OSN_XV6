@@ -26,6 +26,7 @@ extern char trampoline[]; // trampoline.S
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
 
+static unsigned long int next = 1;
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
@@ -459,6 +460,7 @@ scheduler(void)
   
   c->proc = 0;
   for(;;){
+    srand(ticks);
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
 
@@ -506,6 +508,50 @@ scheduler(void)
       }
       release(&min->lock);
     }
+    #endif
+
+    #ifdef LBS
+    // get total tickets
+    int totalTickets = 0;
+    for (p = proc; p < &proc[NPROC]; p++)
+    {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE)
+      {
+        totalTickets += p->tickets;
+      }
+    }
+
+    int random = rand() % totalTickets;
+
+    struct proc *winner = 0;
+    for (p = proc; p < &proc[NPROC]; p++)
+    {
+      if (p->state == RUNNABLE && !winner)
+      {
+        random -= p->tickets;
+        if (random < 0)
+        {
+          winner = p;
+        }
+      }
+
+      if(p != winner)
+        release(&p->lock);
+    }
+
+    if (winner)
+    {
+      if (winner->state == RUNNABLE)
+      {
+        winner->state = RUNNING;
+        c->proc = winner;
+        swtch(&c->context, &winner->context);
+        c->proc = 0;
+      }
+      release(&winner->lock);
+    }
+
     #endif
   }
 }
@@ -722,4 +768,16 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+int rand(void) 
+{
+    next = next * 1103515245 + 12345;
+    return (unsigned int)(next/65536) % 32768;
+}
+
+void srand(unsigned int seed)
+{
+  if(seed == 0)
+    next = seed;
 }

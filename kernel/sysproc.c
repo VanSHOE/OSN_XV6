@@ -112,9 +112,16 @@ sys_settickets(void)
   {
     return -1;
   }
-  printf("Tickets before: %d\n", myproc()->tickets);
+
+  acquire(&myproc()->lock);
+
+  // printf("Tickets before: %d\n", myproc()->tickets);
+
   myproc()->tickets = tickets;
-  printf("Tickets after: %d\n", myproc()->tickets);
+  
+  // printf("Tickets after: %d\n", myproc()->tickets);
+  
+  release(&myproc()->lock);
   return 0;
 }
 
@@ -124,11 +131,13 @@ sys_set_priority(void)
   int priority, process_id;
   argint(0, &priority);
   argint(1, &process_id);
+
+  // print args
+
+  printf("Priority: %d, Process ID: %d, rand: %d\n", priority, process_id, rand());
   
   // get proc
-  struct proc *p;
-
-
-
+  // struct proc *p;
+  // print
   return 0;
 }
