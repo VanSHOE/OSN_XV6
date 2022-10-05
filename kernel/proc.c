@@ -131,7 +131,7 @@ found:
   p->trace = 0;
   p->tickets = 1;
   p->niceness = 5;
-  p->lastSlept = 0;
+  p->lastSlept = -1;
   p->lastScheduled = 0;
   p->timeRun = 0;
   p->timeSlept = 0;
@@ -482,6 +482,7 @@ scheduler(void)
     intr_on();
 
     #ifdef RR
+    // printf("RR\n");
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
@@ -575,6 +576,7 @@ scheduler(void)
 
 
     #ifdef PBS
+    // printf("PBS\n");
     struct proc *max = 0;
     for (p = proc; p < &proc[NPROC]; p++)
     {
@@ -667,6 +669,10 @@ yield(void)
   acquire(&p->lock);
   p->state = RUNNABLE;
   p->timeRun += ticks - p->lastScheduled;
+
+  if(p->timeSlept + p->timeRun)
+    p->niceness = (10 * (p->timeSlept)) / (p->timeSlept + p->timeRun);
+
   sched();
   release(&p->lock);
 }
@@ -737,7 +743,8 @@ wakeup(void *chan)
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
         p->timeSlept += ticks - p->lastSlept;
-        p->niceness = 10.0 * (p->timeSlept) / (p->timeSlept + p->timeRun);
+        if(p->timeSlept + p->timeRun)
+          p->niceness = (10 * (p->timeSlept)) / (p->timeSlept + p->timeRun);
         p->lastSlept = -1;
       }
       release(&p->lock);

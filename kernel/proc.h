@@ -99,7 +99,7 @@ struct proc {
   int lastSlept;               // Time the process last slept
   int lastScheduled;           // Time the process last ran
   int timeSlept;               // Total time the process has slept
-  int timeRun;           // Total time the process has been run
+  int timeRun;                 // Total time the process has been run
 
   int trace;                   // Tracing
 
