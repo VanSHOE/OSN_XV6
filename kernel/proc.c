@@ -520,6 +520,7 @@ scheduler(void)
       {
         totalTickets += p->tickets;
       }
+      release(&p->lock);
     }
 
     int random = rand() % totalTickets;
@@ -527,6 +528,7 @@ scheduler(void)
     struct proc *winner = 0;
     for (p = proc; p < &proc[NPROC]; p++)
     {
+      acquire(&p->lock);
       if (p->state == RUNNABLE && !winner)
       {
         random -= p->tickets;
