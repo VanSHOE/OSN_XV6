@@ -108,6 +108,7 @@ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 int             rand(void);
 void            srand(unsigned int);
+struct proc*    getProc(int pid);
 
 // swtch.S
 void            swtch(struct context*, struct context*);

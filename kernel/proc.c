@@ -130,6 +130,8 @@ found:
   p->timesScheduled = 0;
   p->trace = 0;
   p->tickets = 1;
+  p->niceness = 5;
+  p->lastSlept = -1;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -153,6 +155,19 @@ found:
   p->context.sp = p->kstack + PGSIZE;
 
   return p;
+}
+
+struct proc* getProc(int pid){
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->pid == pid) {
+      release(&p->lock);
+      return p;
+    }
+    release(&p->lock);
+  }
+  return 0;
 }
 
 // free a proc structure and the data hanging from it,
@@ -640,6 +655,7 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
+  p->lastSlept = ticks;
 
   sched();
 
@@ -663,6 +679,8 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
+        p->niceness = 10.0 * (ticks - p->lastSlept) / (ticks - p->createTime);
+        p->lastSlept = -1;
       }
       release(&p->lock);
     }

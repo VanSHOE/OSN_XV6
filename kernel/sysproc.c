@@ -132,12 +132,23 @@ sys_set_priority(void)
   argint(0, &priority);
   argint(1, &process_id);
 
-  // print args
+  uint64 returnVal;
+  struct proc *p;
+  p = getProc(process_id);
 
-  printf("Priority: %d, Process ID: %d, rand: %d\n", priority, process_id, rand());
+  if(!p)
+  {
+    return -1;
+  }
+
+  acquire(&p->lock);
+
+  returnVal = p->priority;
+  p->priority = priority;
+  p->niceness = 5;
+
+  release(&p->lock);
   
-  // get proc
-  // struct proc *p;
-  // print
-  return 0;
+
+  return returnVal;
 }
