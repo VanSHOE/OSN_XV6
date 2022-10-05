@@ -144,9 +144,12 @@ sys_set_priority(void)
   returnVal = p->priority;
   p->priority = priority;
   p->niceness = 5;
-
   release(&p->lock);
-  
+
+  if (returnVal > priority)
+  {
+    yield();
+  }
 
   return returnVal;
 }

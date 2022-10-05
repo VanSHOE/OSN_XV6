@@ -131,7 +131,10 @@ found:
   p->trace = 0;
   p->tickets = 1;
   p->niceness = 5;
-  p->lastSlept = -1;
+  p->lastSlept = 0;
+  p->lastScheduled = 0;
+  p->timeRun = 0;
+  p->timeSlept = 0;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -569,6 +572,63 @@ scheduler(void)
     }
 
     #endif
+
+
+    #ifdef PBS
+    struct proc *max = 0;
+    for (p = proc; p < &proc[NPROC]; p++)
+    {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE)
+      {
+        if(!max)
+        {
+          max = p;
+        }
+        else
+        {
+          int newDp = getDP(p);
+          int maxDp = getDP(max);
+
+          if(newDp < maxDp)
+          {
+            max = p;
+          }
+          else if(newDp == maxDp)
+          {
+            if(p->timesScheduled < max->timesScheduled)
+            {
+              max = p;
+            }
+            else if (p->timesScheduled == max->timesScheduled)
+            {
+              if(p->createTime < max->createTime)
+              {
+                max = p;
+              }
+            }
+          }
+        }
+      }
+      release(&p->lock);
+    }
+
+    if (max)
+    {
+      acquire(&max->lock);
+      if (max->state == RUNNABLE)
+      {
+        max->state = RUNNING;
+        c->proc = max;
+        max->timesScheduled++;
+        max->lastScheduled = ticks;
+        swtch(&c->context, &max->context);
+        c->proc = 0;
+      }
+      release(&max->lock);
+    }
+
+    #endif
   }
 }
 
@@ -603,12 +663,10 @@ sched(void)
 void
 yield(void)
 {
-  #if defined(FCFS) || defined(PBS)
-  return;
-  #endif
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
+  p->timeRun += ticks - p->lastScheduled;
   sched();
   release(&p->lock);
 }
@@ -678,7 +736,8 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
-        p->niceness = 10.0 * (ticks - p->lastSlept) / (ticks - p->createTime);
+        p->timeSlept += ticks - p->lastSlept;
+        p->niceness = 10.0 * (p->timeSlept) / (p->timeSlept + p->timeRun);
         p->lastSlept = -1;
       }
       release(&p->lock);
@@ -799,4 +858,20 @@ void srand(unsigned int seed)
 {
   if(seed == 0)
     next = seed;
+}
+
+int getDP(struct proc *p)
+{
+  int dp = p->priority - p->niceness + 5;
+  if (dp > 100)
+  {
+    dp = 100;
+  }
+
+  if (dp < 0)
+  {
+    dp = 0;
+  }
+
+  return dp;
 }

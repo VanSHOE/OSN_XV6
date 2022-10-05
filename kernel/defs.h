@@ -109,6 +109,7 @@ void            procdump(void);
 int             rand(void);
 void            srand(unsigned int);
 struct proc*    getProc(int pid);
+int             getDP(struct proc *p);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
