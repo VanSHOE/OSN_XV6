@@ -141,8 +141,6 @@ sys_set_priority(void)
     return -1;
   }
 
-  acquire(&p->lock);
-
   returnVal = p->priority;
   p->priority = priority;
   p->niceness = 5;
