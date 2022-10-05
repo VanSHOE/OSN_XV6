@@ -97,6 +97,7 @@ struct proc {
   int niceness;                // Measures percentage of time the process sleeps
   int tickets;                 // Number of tickets for lottery scheduler
   int lastSlept;               // Time the process last slept
+  int lastScheduled;           // Time the process last ran
 
   int trace;                   // Tracing
 
