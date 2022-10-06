@@ -104,6 +104,8 @@ extern uint64 sys_close(void);
 extern uint64 sys_trace(void);
 extern uint64 sys_settickets(void);
 extern uint64 sys_set_priority(void);
+extern uint64 sys_sigalarm(void);
+extern uint64 sys_sigreturn(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -131,12 +133,14 @@ static uint64 (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_trace]   sys_trace,
 [SYS_settickets] sys_settickets,
-[SYS_set_priority] sys_set_priority
+[SYS_set_priority] sys_set_priority,
+[SYS_sigalarm] sys_sigalarm,
+[SYS_sigreturn] sys_sigreturn
 };
 
 // LUT for system call names.
-static char *syscallnames[] = {"fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat", "chdir", "dup", "getpid", "sbrk", "sleep", "uptime", "open", "write", "mknod", "unlink", "link", "mkdir", "close", "trace", "settickets"};
-static int totalArgs[] = {0, 1, 1, 0, 3, 2, 2, 1, 1, 1, 0, 1, 1, 0, 2, 3, 3, 1, 2, 1, 1, 1, 1};
+static char *syscallnames[] = {"fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat", "chdir", "dup", "getpid", "sbrk", "sleep", "uptime", "open", "write", "mknod", "unlink", "link", "mkdir", "close", "trace", "settickets", "setpriority", "sigalarm", "sigreturn"};
+static int totalArgs[] = {0, 1, 1, 0, 3, 2, 2, 1, 1, 1, 0, 1, 1, 0, 2, 3, 3, 1, 2, 1, 1, 1, 1, 2, 2, 0};
 
 void
 syscall(void)

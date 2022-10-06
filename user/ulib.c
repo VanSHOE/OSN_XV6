@@ -145,3 +145,9 @@ memcpy(void *dst, const void *src, uint n)
 {
   return memmove(dst, src, n);
 }
+
+void
+alarm(int ticks, void (*handler)(void))
+{
+  sigalarm(ticks, handler);
+}

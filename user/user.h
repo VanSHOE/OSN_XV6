@@ -25,6 +25,8 @@ int uptime(void);
 int trace(int);
 int settickets(int);
 int set_priority(int, int);
+void sigalarm(int, void (*)(void));
+void sigreturn(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -42,3 +44,4 @@ void free(void*);
 int atoi(const char*);
 int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
+void alarm(int ticks, void (*)(void));

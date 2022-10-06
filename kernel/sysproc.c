@@ -153,3 +153,17 @@ sys_set_priority(void)
 
   return returnVal;
 }
+
+uint64
+sys_sigalarm(void)
+{
+  printf("You called: sys_sigalarm\n");
+  return 0;
+}
+
+uint64
+sys_sigreturn(void)
+{
+  printf("You called: sys_sigreturn\n");
+  return 0;
+}
