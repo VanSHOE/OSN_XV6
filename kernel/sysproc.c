@@ -157,7 +157,20 @@ sys_set_priority(void)
 uint64
 sys_sigalarm(void)
 {
-  printf("You called: sys_sigalarm\n");
+  // printf("You called: sys_sigalarm\n");
+  int interval;
+  void (*handler)(void);
+  argint(0, &interval);
+  argaddr(1, (uint64*)&handler);
+
+  if(interval <= 0 || handler == 0)
+  {
+    return -1;
+  }
+
+  myproc()->alarmFreq = interval;
+  myproc()->alarmHandler = handler;
+
   return 0;
 }
 

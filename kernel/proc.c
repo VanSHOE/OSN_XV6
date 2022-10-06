@@ -135,6 +135,7 @@ found:
   p->lastScheduled = 0;
   p->timeRun = 0;
   p->timeSlept = 0;
+  p->alarmFreq = 0;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){

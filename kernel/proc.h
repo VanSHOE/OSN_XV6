@@ -103,6 +103,9 @@ struct proc {
 
   int trace;                   // Tracing
 
+  int alarmFreq;               // Alarm frequency
+  void (*alarmHandler)(void);  // Alarm handler
+
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
 
