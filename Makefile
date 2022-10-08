@@ -140,6 +140,8 @@ UPROGS=\
 	$U/_strace\
 	$U/_settickets\
 	$U/_setpriority\
+	$U/_heavy\
+	$U/_alarmtest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

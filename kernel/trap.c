@@ -38,6 +38,8 @@ usertrap(void)
 {
   int which_dev = 0;
 
+  // printf("Usertrap \n");
+
   if((r_sstatus() & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
 
@@ -77,10 +79,30 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  #if !defined(FCFS) && !defined(PBS)
+  
   if(which_dev == 2)
+  {
+    // printf("\nUser clockintr at tick: %d\n", ticks);
+
+    acquire(&p->lock);
+    // printf("Alarm Frequency: %d\n", p->alarmFreq);
+    if(p->alarmFreq && !p->alarmRunning && ticks - p->lastAlarm >= p->alarmFreq)
+    {
+      p->alarmRunning = 1;
+      uint64 Handler;
+      Handler = p->alarmHandler;
+      p->backupTrapFrame = kalloc();
+      memmove(p->backupTrapFrame, p->trapframe, sizeof(struct trapframe));
+      p->lastAlarm = ticks;
+      p->trapframe->epc = (uint64)Handler;
+    }
+    release(&p->lock);
+
+    #if !defined(FCFS) && !defined(PBS)
     yield();
-  #endif
+    #endif
+  }
+  
   usertrapret();
 }
 
@@ -135,6 +157,8 @@ usertrapret(void)
 void 
 kerneltrap()
 {
+
+  // printf("Kerneltrap:");
   int which_dev = 0;
   uint64 sepc = r_sepc();
   uint64 sstatus = r_sstatus();
@@ -152,13 +176,30 @@ kerneltrap()
   }
 
   // give up the CPU if this is a timer interrupt.
-  #if !defined(FCFS) && !defined(PBS)
+ 
   
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING)
+  {
+    // printf("\nKernel yielding at tick: %d with process: %s\n", ticks, myproc()->name);  
+    struct proc *p = myproc();
+    acquire(&p->lock); 
+    if(p->alarmFreq && !p->alarmRunning && ticks - p->lastAlarm >= p->alarmFreq)
+    {
+      p->alarmRunning = 1;
+      uint64 Handler;
+      Handler = p->alarmHandler;
+      p->backupTrapFrame = kalloc();
+      memmove(p->backupTrapFrame, p->trapframe, sizeof(struct trapframe));
+      p->lastAlarm = ticks;
+      p->trapframe->epc = (uint64)Handler;
+    }
+    release(&p->lock);
+    #if !defined(FCFS) && !defined(PBS)
     yield();
-  
-  #endif
+    #endif
+  }
 
+  // printf("no: %d\n", which_dev);
   // the yield() may have caused some traps to occur,
   // so restore trap registers for use by kernelvec.S's sepc instruction.
   w_sepc(sepc);
@@ -170,6 +211,7 @@ clockintr()
 {
   acquire(&tickslock);
   ticks++;
+  // printf("\nCurrent Tick: %d\n", ticks);
   wakeup(&ticks);
   release(&tickslock);
 }

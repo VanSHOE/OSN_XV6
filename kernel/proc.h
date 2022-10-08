@@ -104,7 +104,9 @@ struct proc {
   int trace;                   // Tracing
 
   int alarmFreq;               // Alarm frequency
-  void (*alarmHandler)(void);  // Alarm handler
+  uint64 alarmHandler;              // Alarm handler
+  int lastAlarm;               // Time of last alarm
+  int alarmRunning;            // Whether the alarm is running
 
   // wait_lock must be held when using this:
   struct proc *parent;         // Parent process
@@ -114,6 +116,7 @@ struct proc {
   uint64 sz;                   // Size of process memory (bytes)
   pagetable_t pagetable;       // User page table
   struct trapframe *trapframe; // data page for trampoline.
+  struct trapframe *backupTrapFrame; // backup data page for trampoline
   struct context context;      // swtch() here to run process
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory

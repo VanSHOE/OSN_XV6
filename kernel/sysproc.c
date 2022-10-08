@@ -159,17 +159,27 @@ sys_sigalarm(void)
 {
   // printf("You called: sys_sigalarm\n");
   int interval;
-  void (*handler)(void);
+  uint64 handler;
   argint(0, &interval);
   argaddr(1, (uint64*)&handler);
+  // printf("Sig alarm called with interval: %d & handler: %d\n", interval, handler);
 
-  if(interval <= 0 || handler == 0)
+  struct proc* p = myproc();
+  acquire(&p->lock);
+  
+  if(interval <= 0)
   {
+    p->alarmFreq = 0;
+    release(&p->lock);
     return -1;
   }
 
-  myproc()->alarmFreq = interval;
-  myproc()->alarmHandler = handler;
+
+  p->alarmFreq = interval;
+  p->alarmHandler = handler;
+  p->lastAlarm = ticks;
+
+  release(&p->lock);
 
   return 0;
 }
@@ -177,6 +187,13 @@ sys_sigalarm(void)
 uint64
 sys_sigreturn(void)
 {
-  printf("You called: sys_sigreturn\n");
-  return 0;
+  struct proc* p = myproc();
+  acquire(&p->lock);
+
+  p->alarmRunning = 0;
+  memmove(p->trapframe, p->backupTrapFrame, sizeof(struct trapframe));
+  kfree(p->backupTrapFrame);
+  release(&p->lock);
+
+  return p->trapframe->a0;
 }
