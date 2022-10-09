@@ -5,7 +5,6 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-#include <math.h>
 
 struct cpu cpus[NCPU];
 
@@ -485,7 +484,15 @@ age(void)
     if (p->state == RUNNABLE)
     {
       if (p->queue){
-        int limit = pow(2, p->queue);
+        int limit;
+        if (p->queue == 1)
+          limit = 2;
+        else if (p->queue == 2)
+          limit = 4;
+        else if (p->queue == 3)
+          limit = 8;
+        else
+          limit = 16;
         if (p->timeInQueue >= limit)
         {
           p->queue--;
@@ -672,7 +679,49 @@ scheduler(void)
 
     // aging for processes
     age();
-    
+
+    // select the process to run
+    struct proc *procToRun = 0;
+    for (p = proc; p < &proc[NPROC]; p++)
+    {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE)
+      {
+        if (!procToRun)
+        {
+          procToRun = p;
+        }
+        else
+        {
+          if (p->queue < procToRun->queue)
+          {
+            procToRun = p;
+          }
+          else if (p->queue == procToRun->queue)
+          {
+            if (p->entryTime < procToRun->entryTime)
+            {
+              procToRun = p;
+            }
+          }
+        }
+      }
+      release(&p->lock);
+    }
+
+    // run the process
+    if (procToRun)
+    {
+      acquire(&procToRun->lock);
+      if (procToRun->state == RUNNABLE)
+      {
+        procToRun->state = RUNNING;
+        c->proc = procToRun;
+        swtch(&c->context, &procToRun->context);
+        c->proc = 0;
+      }
+      release(&procToRun->lock);
+    }
 
     # endif
   }
