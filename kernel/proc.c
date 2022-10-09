@@ -160,6 +160,14 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  # ifdef MLFQ
+
+  p->entryTime = ticks;
+  p->queue = 0;
+  p->timeInQueue = 0;
+
+  # endif
+
   return p;
 }
 
@@ -465,6 +473,38 @@ wait(uint64 addr)
   }
 }
 
+// age all the processes if MLFQ is enabled
+# ifdef MLFQ
+void
+age(void)
+{
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; p++)
+  {
+    if (p->state == RUNNABLE)
+    {
+      if (p->queue){
+        int limit;
+        if (p->queue == 1)
+          limit = 2;
+        else if (p->queue == 2)
+          limit = 4;
+        else if (p->queue == 3)
+          limit = 8;
+        else
+          limit = 16;
+        if (p->timeInQueue >= limit)
+        {
+          p->queue--;
+          p->timeInQueue = 0;
+          p->entryTime = ticks;
+        }
+      }
+    }
+  }
+}
+# endif
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -634,6 +674,56 @@ scheduler(void)
     }
 
     #endif
+
+    # ifdef MLFQ
+
+    // aging for processes
+    age();
+
+    // select the process to run
+    struct proc *procToRun = 0;
+    for (p = proc; p < &proc[NPROC]; p++)
+    {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE)
+      {
+        if (!procToRun)
+        {
+          procToRun = p;
+        }
+        else
+        {
+          if (p->queue < procToRun->queue)
+          {
+            procToRun = p;
+          }
+          else if (p->queue == procToRun->queue)
+          {
+            if (p->entryTime < procToRun->entryTime)
+            {
+              procToRun = p;
+            }
+          }
+        }
+      }
+      release(&p->lock);
+    }
+
+    // run the process
+    if (procToRun)
+    {
+      acquire(&procToRun->lock);
+      if (procToRun->state == RUNNABLE)
+      {
+        procToRun->state = RUNNING;
+        c->proc = procToRun;
+        swtch(&c->context, &procToRun->context);
+        c->proc = 0;
+      }
+      release(&procToRun->lock);
+    }
+
+    # endif
   }
 }
 
