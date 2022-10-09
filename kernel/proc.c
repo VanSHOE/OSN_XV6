@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include <math.h>
 
 struct cpu cpus[NCPU];
 
@@ -159,6 +160,14 @@ found:
   memset(&p->context, 0, sizeof(p->context));
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
+
+  # ifdef MLFQ
+
+  p->entryTime = ticks;
+  p->queue = 0;
+  p->timeInQueue = 0;
+
+  # endif
 
   return p;
 }
@@ -465,6 +474,30 @@ wait(uint64 addr)
   }
 }
 
+// age all the processes if MLFQ is enabled
+# ifdef MLFQ
+void
+age(void)
+{
+  struct proc *p;
+  for(p = proc; p < &proc[NPROC]; p++)
+  {
+    if (p->state == RUNNABLE)
+    {
+      if (p->queue){
+        int limit = pow(2, p->queue);
+        if (p->timeInQueue >= limit)
+        {
+          p->queue--;
+          p->timeInQueue = 0;
+          p->entryTime = ticks;
+        }
+      }
+    }
+  }
+}
+# endif
+
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -634,6 +667,14 @@ scheduler(void)
     }
 
     #endif
+
+    # ifdef MLFQ
+
+    // aging for processes
+    age();
+    
+
+    # endif
   }
 }
 
