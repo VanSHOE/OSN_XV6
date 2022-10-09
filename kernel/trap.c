@@ -69,7 +69,37 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
-  } else {
+  } else if(r_scause() == 0xF) {
+      uint64 va = r_stval(); // the faulting addr in case of page faults
+      va = PGROUNDDOWN(va); // starting addr of the page that caused the fault
+      pte_t *pte = walk(p->pagetable, va, 0);
+      int flags = PTE_FLAGS(*pte);
+
+      // is cow flag set
+      if((flags & PTE_COW) && (flags & PTE_V)) {
+          // allocate a new page
+          void *mem = kalloc();
+          if(mem == 0) {
+              panic("kalloc");
+          }
+
+          // copy the data from the old page to the new page
+          uint64 pa;
+          pa = PTE2PA(*pte);
+
+          printf("\nThis ran\n");
+          uvmunmap(p->pagetable, va, PGSIZE, 0);
+          memmove(mem, (void *)pa, PGSIZE);
+          mappages(p->pagetable, va, PGSIZE, (uint64)mem, (PTE_FLAGS(*pte) & ~PTE_COW) | PTE_W);
+          printf("\nThis ran2\n");
+      }
+      else
+      {
+        printf("Haha");
+      }
+  }
+  
+  else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     setkilled(p);
