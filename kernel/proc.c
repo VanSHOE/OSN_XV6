@@ -481,6 +481,7 @@ age(void)
   struct proc *p;
   for(p = proc; p < &proc[NPROC]; p++)
   {
+    acquire(&p->lock);
     if (p->state == RUNNABLE)
     {
       if (p->queue){
@@ -493,6 +494,7 @@ age(void)
           limit = 8;
         else
           limit = 16;
+        p->timeInQueue = ticks - p->entryTime;
         if (p->timeInQueue >= limit)
         {
           p->queue--;
@@ -501,6 +503,7 @@ age(void)
         }
       }
     }
+    release(&p->lock);
   }
 }
 # endif
@@ -679,6 +682,19 @@ scheduler(void)
 
     // aging for processes
     age();
+    int limit;
+
+    // set the limit based on queue number
+    if (procToRun->queue == 0)
+      limit = 1;
+    else if (procToRun->queue == 1)
+      limit = 2;
+    else if (procToRun->queue == 2)
+      limit = 4;
+    else if (procToRun->queue == 3)
+      limit = 8;
+    else
+      limit = 16;
 
     // select the process to run
     struct proc *procToRun = 0;
@@ -693,6 +709,13 @@ scheduler(void)
         }
         else
         {
+          // demote queue if ticks - entrytime >= limit
+          if (ticks - p->entryTime >= limit)
+          {
+            p->queue++;
+            p->entryTime = ticks;
+            p->timeInQueue = 0;
+          }
           if (p->queue < procToRun->queue)
           {
             procToRun = p;
@@ -709,7 +732,7 @@ scheduler(void)
       release(&p->lock);
     }
 
-    // run the process
+    // run the process for the limit amount of ticks
     if (procToRun)
     {
       acquire(&procToRun->lock);
@@ -717,6 +740,7 @@ scheduler(void)
       {
         procToRun->state = RUNNING;
         c->proc = procToRun;
+        procToRun->entryTime = ticks;
         swtch(&c->context, &procToRun->context);
         c->proc = 0;
       }
@@ -925,17 +949,41 @@ void
 procdump(void)
 {
   static char *states[] = {
-  [UNUSED]    "unused",
-  [USED]      "used",
-  [SLEEPING]  "sleep ",
-  [RUNNABLE]  "runble",
-  [RUNNING]   "run   ",
-  [ZOMBIE]    "zombie"
+  [UNUSED]    "unused  ",
+  [USED]      "used    ",
+  [SLEEPING]  "sleeping",
+  [RUNNABLE]  "runnable",
+  [RUNNING]   "running ",
+  [ZOMBIE]    "zombie  "
   };
   struct proc *p;
   char *state;
 
   printf("\n");
+
+  #ifdef RR
+  printf("Procdump: Round Robin Scheduler\n");
+  printf("PID\tState\t")
+  #endif
+
+  #ifdef FCFS
+  printf("Procdump: First Come First Serve Scheduler\n");
+  #endif
+
+  #ifdef PBS
+  printf("Procdump: Priority Based Scheduler\n");
+  #endif
+
+  #ifdef LBS
+  printf("Procdump: Lottery Based Scheduler\n");
+  #endif
+
+  #ifdef MLFQ
+  printf("Procdump: Multi Level Feedback Queue Scheduler\n");
+  #endif
+
+
+
   for(p = proc; p < &proc[NPROC]; p++){
     if(p->state == UNUSED)
       continue;
