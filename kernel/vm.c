@@ -10,9 +10,9 @@
 struct ptRefs {
   pte_t *pte;
   int refCount;
-}
+};
 
-ptRefs *ptRefsTable[1024];
+struct ptRefs *ptRefsTable[1024];
 
 /*
  * the kernel's page table.
