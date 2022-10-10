@@ -76,7 +76,7 @@ usertrap(void)
       int flags = PTE_FLAGS(*pte);
 
       // is cow flag set
-      if((flags & PTE_COW) && (flags & PTE_V)) {
+      if((flags & PTE_COW) && (flags & PTE_V) && (flags & PTE_U)) {
           // allocate a new page
           void *mem = kalloc();
           if(mem == 0) {
