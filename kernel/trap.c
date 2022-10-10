@@ -90,7 +90,7 @@ usertrap(void)
           printf("\nThis ran\n");
           uvmunmap(p->pagetable, va, PGSIZE, 0);
           memmove(mem, (void *)pa, PGSIZE);
-          mappages(p->pagetable, va, PGSIZE, (uint64)mem, (PTE_FLAGS(*pte) & ~PTE_COW) | PTE_W);
+          mappages(p->pagetable, va, PGSIZE, (uint64)mem, (flags & ~PTE_COW) | PTE_W);
           printf("\nThis ran2\n");
       }
       else
