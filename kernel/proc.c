@@ -696,6 +696,20 @@ scheduler(void)
     else
       limit = 16;
 
+    // if the process has been in the queue for long enough, demote it
+    for (p = proc; p < &proc[NPROC]; p++){
+      acquire(&p->lock);
+      if (p->state == RUNNABLE){
+        if (ticks - p->entryTime >= limit && p->queue < 4)
+        {
+          p->queue++;
+          p->entryTime = ticks;
+          p->timeInQueue = 0;
+        }
+      }
+      release(&p->lock);
+    }
+    
     // select the process to run
     struct proc *procToRun = 0;
     for (p = proc; p < &proc[NPROC]; p++)
@@ -709,13 +723,6 @@ scheduler(void)
         }
         else
         {
-          // demote queue if ticks - entrytime >= limit
-          if (ticks - p->entryTime >= limit)
-          {
-            p->queue++;
-            p->entryTime = ticks;
-            p->timeInQueue = 0;
-          }
           if (p->queue < procToRun->queue)
           {
             procToRun = p;
@@ -732,7 +739,7 @@ scheduler(void)
       release(&p->lock);
     }
 
-    // run the process for the limit amount of ticks
+    // run the process
     if (procToRun)
     {
       acquire(&procToRun->lock);
@@ -949,12 +956,12 @@ void
 procdump(void)
 {
   static char *states[] = {
-  [UNUSED]    "unused  ",
-  [USED]      "used    ",
-  [SLEEPING]  "sleeping",
-  [RUNNABLE]  "runnable",
-  [RUNNING]   "running ",
-  [ZOMBIE]    "zombie  "
+  [UNUSED]    "Unused",
+  [USED]      "Used",
+  [SLEEPING]  "Sleeping",
+  [RUNNABLE]  "Runnable",
+  [RUNNING]   "Running",
+  [ZOMBIE]    "Zombie"
   };
   struct proc *p;
   char *state;
@@ -963,7 +970,6 @@ procdump(void)
 
   #ifdef RR
   printf("Procdump: Round Robin Scheduler\n");
-  printf("PID\tState\t");
   #endif
 
   #ifdef FCFS
@@ -977,13 +983,17 @@ procdump(void)
   #ifdef LBS
   printf("Procdump: Lottery Based Scheduler\n");
   #endif
+  
+  #ifndef MLFQ
+  printf("PID        State      Name       Time Run   Time Slept \n");
+  # endif
 
   #ifdef MLFQ
   printf("Procdump: Multi Level Feedback Queue Scheduler\n");
+  printf("PID        State      Name       Queue      Time Run   Time Slept \n");
   #endif
 
-
-
+  #ifndef MLFQ
   for(p = proc; p < &proc[NPROC]; p++){
     if(p->state == UNUSED)
       continue;
@@ -991,9 +1001,15 @@ procdump(void)
       state = states[p->state];
     else
       state = "???";
-    printf("%d %s %s", p->pid, state, p->name);
+    printf("%-10d %-10s %-10s %-10d %-10d\n", p->pid, state, p->name, p->timeRun, p->timeSlept);
     printf("\n");
   }
+  #endif
+
+  #ifdef MLFQ
+  // not quite sure how to do this - will need to keep sleeping and rechecking ig?
+  #endif
+  
 }
 
 int rand(void) 
