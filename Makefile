@@ -142,7 +142,6 @@ UPROGS=\
 	$U/_setpriority\
 	$U/_heavy\
 	$U/_alarmtest\
-	$U/_cowtest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
