@@ -963,7 +963,7 @@ procdump(void)
 
   #ifdef RR
   printf("Procdump: Round Robin Scheduler\n");
-  printf("PID\tState\t")
+  printf("PID\tState\t");
   #endif
 
   #ifdef FCFS
