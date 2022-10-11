@@ -211,6 +211,7 @@ clockintr()
 {
   acquire(&tickslock);
   ticks++;
+  update_time();
   // printf("\nCurrent Tick: %d\n", ticks);
   wakeup(&ticks);
   release(&tickslock);
