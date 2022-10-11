@@ -6,14 +6,6 @@
 #include "defs.h"
 #include "fs.h"
 
-
-struct ptRefs {
-  pte_t *pte;
-  int refCount;
-}
-
-ptRefs *ptRefsTable[1024];
-
 /*
  * the kernel's page table.
  */
@@ -185,7 +177,6 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     panic("uvmunmap: not aligned");
 
   for(a = va; a < va + npages*PGSIZE; a += PGSIZE){
-    printf("Ran once\n");
     if((pte = walk(pagetable, a, 0)) == 0)
       panic("uvmunmap: walk");
     if((*pte & PTE_V) == 0)
@@ -341,9 +332,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     }
     else
     {
-      printf("\nUVM This ran\n");
       uvmunmap(old, i, PGSIZE, 0);
-      printf("\nUVM This ran2\n");
       mappages(old, i, PGSIZE, pa, flags);
     }
   }
@@ -373,7 +362,6 @@ uvmclear(pagetable_t pagetable, uint64 va)
 int
 copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 {
-  printf("UAWS");
   uint64 n, va0, pa0;
 
   while(len > 0){
