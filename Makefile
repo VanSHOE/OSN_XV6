@@ -143,6 +143,7 @@ UPROGS=\
 	$U/_heavy\
 	$U/_alarmtest\
 	$U/_time\
+	$U/_schedulertest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
