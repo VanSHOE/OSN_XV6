@@ -497,6 +497,8 @@ int
 num_digits(int num)
 {
   int digits = 0;
+  if (num == 0)
+    return 1;
   while (num > 0) {
     num /= 10;
     digits++;
@@ -562,7 +564,7 @@ age(void)
   for(p = proc; p < &proc[NPROC]; p++)
   {
     acquire(&p->lock);
-    if (p->state == RUNNABLE)
+    if (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING)
     {
       if (p->queue){
         int limit;
@@ -764,22 +766,20 @@ scheduler(void)
     age();
     int limit;
 
-    // set the limit based on queue number
-    if (procToRun->queue == 0)
-      limit = 1;
-    else if (procToRun->queue == 1)
-      limit = 2;
-    else if (procToRun->queue == 2)
-      limit = 4;
-    else if (procToRun->queue == 3)
-      limit = 8;
-    else
-      limit = 16;
-
     // if the process has been in the queue for long enough, demote it
     for (p = proc; p < &proc[NPROC]; p++){
       acquire(&p->lock);
-      if (p->state == RUNNABLE){
+      if (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING){
+        if (p->queue == 0)
+          limit = 1;
+        else if (p->queue == 1)
+          limit = 2;
+        else if (p->queue == 2)
+          limit = 4;
+        else if (p->queue == 3)
+          limit = 8;
+        else
+          limit = 16;
         if (ticks - p->entryTime >= limit && p->queue < 4)
         {
           p->queue++;
@@ -1035,6 +1035,12 @@ either_copyin(void *dst, int user_src, uint64 src, uint64 len)
 void
 procdump(void)
 {
+
+  // #ifdef MLFQ
+  // while (1)
+  //   {
+  // #endif
+
   static char *states[] = {
   [UNUSED]    "Unused  ",
   [USED]      "Used    ",
@@ -1049,19 +1055,19 @@ procdump(void)
   printf("\n");
 
   #ifdef RR
-  printf("Procdump: Round Robin Scheduler\n");
+  printf("Procdump: Round Robin Scheduler\n\n");
   #endif
 
   #ifdef FCFS
-  printf("Procdump: First Come First Serve Scheduler\n");
+  printf("Procdump: First Come First Serve Scheduler\n\n");
   #endif
 
   #ifdef PBS
-  printf("Procdump: Priority Based Scheduler\n");
+  printf("Procdump: Priority Based Scheduler\n\n");
   #endif
 
   #ifdef LBS
-  printf("Procdump: Lottery Based Scheduler\n");
+  printf("Procdump: Lottery Based Scheduler\n\n");
   #endif
   
   #ifndef MLFQ
@@ -1069,7 +1075,7 @@ procdump(void)
   #endif
 
   #ifdef MLFQ
-  printf("Procdump: Multi Level Feedback Queue Scheduler\n");
+  printf("Procdump: Multi Level Feedback Queue Scheduler\n\n");
   printf("PID        State          Queue      Time Run       Time Slept      Name       \n");
   #endif
 
@@ -1090,10 +1096,10 @@ procdump(void)
       printf(" ");
     printf("%s       ", state);
     printf("%d", p->timeRun);
-    for(int i = 0; i < 14 - len_timerun; i++)
+    for(int i = 0; i < 15 - len_timerun; i++)
       printf(" ");
     printf("%d", p->timeSlept);
-    for(int i = 0; i < 15 - len_timeslept; i++)
+    for(int i = 0; i < 16 - len_timeslept; i++)
       printf(" ");
     printf("%s\n", p->name);    
   }
@@ -1102,7 +1108,6 @@ procdump(void)
 
   #ifdef MLFQ
   // this time, keep running the loop, sleeping for 0.5 seconds
-  while (1){
     for(p = proc; p < &proc[NPROC]; p++){
       if(p->state == UNUSED)
         continue;
@@ -1131,9 +1136,12 @@ procdump(void)
       printf("%s\n", p->name);    
     }
     printf("\n");
-    sleep(500); // incorrect; there's a custom sleep function in xv6. Need to fix.
-  }
   #endif
+
+  // #ifdef MLFQ
+  //   // sleep(&p->chan, &p->lock);
+  //   }
+  // #endif
   
 }
 
