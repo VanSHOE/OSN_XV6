@@ -7,9 +7,9 @@ int main(int argc, char *argv[])
 {
     for(int i = 0; i < 1000 * 500000 ; i++)
     {
-        printf(".");
+        printf("\0");
     }
 
-    printf("\n");
+    printf("Done\n");
     return 0;
 }
