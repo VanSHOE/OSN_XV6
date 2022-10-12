@@ -23,6 +23,25 @@ struct {
   struct run *freelist;
 } kmem;
 
+// should be in vm.c but I need to lock kmem to mess with mem
+
+
+
+int refs[PHYSTOP / PGSIZE];
+void incRef(uint64 pa)
+{
+  acquire(&kmem.lock);
+
+  int toInc = pa / PGSIZE;
+  if(toInc < 0 || toInc >= PHYSTOP / PGSIZE)
+  {
+    panic("incRef: invalid pa");
+  }
+  refs[toInc]++;
+
+  release(&kmem.lock);
+}
+
 void
 kinit()
 {
@@ -36,7 +55,10 @@ freerange(void *pa_start, void *pa_end)
   char *p;
   p = (char*)PGROUNDUP((uint64)pa_start);
   for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
+  {
+    refs[(uint64)p / PGSIZE]++;
     kfree(p);
+  }
 }
 
 // Free the page of physical memory pointed at by pa,
@@ -51,14 +73,26 @@ kfree(void *pa)
   if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
-  // Fill with junk to catch dangling refs.
-  memset(pa, 1, PGSIZE);
-
-  r = (struct run*)pa;
-
+  int idx = (uint64)pa / PGSIZE;
   acquire(&kmem.lock);
-  r->next = kmem.freelist;
-  kmem.freelist = r;
+
+  if(refs[idx] <= 0)
+  {
+    panic("kfree: ref count is 0");
+  }
+
+  refs[idx]--;
+
+  if(refs[idx] == 0)
+  {
+    // Fill with junk to catch dangling refs.
+    memset(pa, 1, PGSIZE);
+
+    r = (struct run*)pa;
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+  }
+
   release(&kmem.lock);
 }
 
@@ -73,7 +107,17 @@ kalloc(void)
   acquire(&kmem.lock);
   r = kmem.freelist;
   if(r)
+  {
     kmem.freelist = r->next;
+    int idx = (uint64)r / PGSIZE;
+
+    if(refs[idx] != 0)
+    {
+      panic("Allocating a page that is already allocated");
+    }
+
+    refs[idx] = 1;
+  }
   release(&kmem.lock);
 
   if(r)

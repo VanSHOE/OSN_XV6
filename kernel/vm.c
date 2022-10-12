@@ -308,7 +308,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
   pte_t *pte;
   uint64 pa, i;
   uint flags;
-  char *mem;
+  // char *mem;
 
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walk(old, i, 0)) == 0)
@@ -316,14 +316,17 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     if((*pte & PTE_V) == 0)
       panic("uvmcopy: page not present");
     pa = PTE2PA(*pte);
+    // remove write perms of page in parent
+    *pte &= ~PTE_W;
+    *pte |= PTE_COW;
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto err;
-    memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
-      kfree(mem);
+    
+    // memmove(mem, (char*)pa, PGSIZE);
+    if(mappages(new, i, PGSIZE, (uint64)pa, flags) != 0){
+      // kfree(mem);
       goto err;
     }
+    incRef(pa);
   }
   return 0;
 
@@ -352,6 +355,49 @@ int
 copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
 {
   uint64 n, va0, pa0;
+  va0 = PGROUNDDOWN(dstva);
+  // check for page fault
+  if (va0 >= MAXVA)
+  {
+    return -1;
+  }
+  if (va0 < 0)
+  {
+    return -1;
+  }
+
+  pte_t* pte = walk(pagetable, va0, 0);
+  if (pte == 0)
+  {
+    return -1;
+  }
+
+  if (!(*pte & PTE_W) && !(*pte & PTE_COW))
+  {
+    return -1;
+  }
+
+  // check for user and valid
+  if (!(*pte & PTE_U) || !(*pte & PTE_V))
+  {
+    return -1;
+  }
+
+  uint64 new = (uint64)kalloc();
+
+  if (new == 0)
+  {
+    return -1;
+  }
+
+  memmove((char *)new, (char *)PTE2PA(*pte), PGSIZE);
+  // since this is the faulting process, we could assign it the new page, since we do not know which other child has it
+
+  uint64 old = PTE2PA(*pte);
+  *pte = PA2PTE(new) | PTE_V | PTE_R | PTE_W | PTE_U | PTE_X;
+  *pte &= ~PTE_COW;
+
+  kfree((char *)old);
 
   while(len > 0){
     va0 = PGROUNDDOWN(dstva);

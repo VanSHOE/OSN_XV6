@@ -67,7 +67,54 @@ usertrap(void)
     intr_on();
 
     syscall();
-  } else if((which_dev = devintr()) != 0){
+  } 
+  else if (r_scause() == 15) {
+    int va = r_stval();
+    if (va >= MAXVA)
+    {
+      p->killed = 1;
+    }
+    if (va < 0)
+    {
+      p->killed = 1;
+    }
+
+    pte_t* pte = walk(p->pagetable, va, 0);
+    if (pte == 0)
+    {
+      p->killed = 1;
+    }
+
+
+    if (!(*pte & PTE_W) && !(*pte & PTE_COW))
+    {
+      p->killed = 1;
+    }
+
+
+    // check for user and valid
+    if ((*pte & PTE_W) || !(*pte & PTE_U) || !(*pte & PTE_V))
+    {
+      p->killed = 1;
+    }
+
+    uint64 new = (uint64)kalloc();
+
+    if (new == 0)
+    {
+      p->killed = 1;
+    }
+
+    memmove((char *)new, (char *)PTE2PA(*pte), PGSIZE);
+    // since this is the faulting process, we could assign it the new page, since we do not know which other child has it
+
+    uint64 old = PTE2PA(*pte);
+    *pte = PA2PTE(new) | PTE_V | PTE_R | PTE_W | PTE_U | PTE_X;
+    *pte &= ~PTE_COW;
+
+    kfree((char *)old);
+  }
+  else if((which_dev = devintr()) != 0){
     // ok
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
