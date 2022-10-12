@@ -492,6 +492,18 @@ exit(int status)
   panic("zombie exit");
 }
 
+// get number of digits in a number (makes for nicer formatting later)
+int
+num_digits(int num)
+{
+  int digits = 0;
+  while (num > 0) {
+    num /= 10;
+    digits++;
+  }
+  return digits;
+}
+
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int
@@ -1024,12 +1036,12 @@ void
 procdump(void)
 {
   static char *states[] = {
-  [UNUSED]    "Unused",
-  [USED]      "Used",
+  [UNUSED]    "Unused  ",
+  [USED]      "Used    ",
   [SLEEPING]  "Sleeping",
   [RUNNABLE]  "Runnable",
-  [RUNNING]   "Running",
-  [ZOMBIE]    "Zombie"
+  [RUNNING]   "Running ",
+  [ZOMBIE]    "Zombie  "
   };
   struct proc *p;
   char *state;
@@ -1053,12 +1065,12 @@ procdump(void)
   #endif
   
   #ifndef MLFQ
-  printf("PID        State      Name       Time Run   Time Slept \n");
-  # endif
+  printf("PID        State          Time Run       Time Slept      Name       \n");
+  #endif
 
   #ifdef MLFQ
   printf("Procdump: Multi Level Feedback Queue Scheduler\n");
-  printf("PID        State      Name       Queue      Time Run   Time Slept \n");
+  printf("PID        State          Queue      Time Run       Time Slept      Name       \n");
   #endif
 
   #ifndef MLFQ
@@ -1068,14 +1080,59 @@ procdump(void)
     if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
       state = states[p->state];
     else
-      state = "???";
-    printf("%-10d %-10s %-10s %-10d %-10d\n", p->pid, state, p->name, p->timeRun, p->timeSlept);
-    printf("\n");
+      state = "???     ";
+    int len_pid = num_digits(p->pid);
+    int len_timerun = num_digits(p->timeRun);
+    int len_timeslept = num_digits(p->timeSlept);
+    printf("%d", p->pid);
+    // print spaces such that the next column is aligned
+    for(int i = 0; i < 11 - len_pid; i++)
+      printf(" ");
+    printf("%s       ", state);
+    printf("%d", p->timeRun);
+    for(int i = 0; i < 14 - len_timerun; i++)
+      printf(" ");
+    printf("%d", p->timeSlept);
+    for(int i = 0; i < 15 - len_timeslept; i++)
+      printf(" ");
+    printf("%s\n", p->name);    
   }
+  printf("\n");
   #endif
 
   #ifdef MLFQ
-  // not quite sure how to do this - will need to keep sleeping and rechecking ig?
+  // this time, keep running the loop, sleeping for 0.5 seconds
+  while (1){
+    for(p = proc; p < &proc[NPROC]; p++){
+      if(p->state == UNUSED)
+        continue;
+      if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+        state = states[p->state];
+      else
+        state = "???     ";
+      int len_pid = num_digits(p->pid);
+      int len_timerun = num_digits(p->timeRun);
+      int len_timeslept = num_digits(p->timeSlept);
+      int len_queue = num_digits(p->queue);
+      printf("%d", p->pid);
+      // print spaces such that the next column is aligned
+      for(int i = 0; i < 11 - len_pid; i++)
+        printf(" ");
+      printf("%s       ", state);
+      printf("%d", p->queue);
+      for(int i = 0; i < 11 - len_queue; i++)
+        printf(" ");
+      printf("%d", p->timeRun);
+      for(int i = 0; i < 14 - len_timerun; i++)
+        printf(" ");
+      printf("%d", p->timeSlept);
+      for(int i = 0; i < 15 - len_timeslept; i++)
+        printf(" ");
+      printf("%s\n", p->name);    
+    }
+    printf("\n");
+    sleep(500); // incorrect; there's a custom sleep function in xv6. Need to fix.
+  }
   #endif
   
 }
