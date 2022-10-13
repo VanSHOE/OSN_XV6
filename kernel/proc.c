@@ -564,18 +564,18 @@ age(void)
   for(p = proc; p < &proc[NPROC]; p++)
   {
     acquire(&p->lock);
-    if (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING)
+    if (p->state == RUNNABLE || p->state == SLEEPING)
     {
       if (p->queue){
         int limit;
         if (p->queue == 1)
           limit = 2;
         else if (p->queue == 2)
-          limit = 4;
+          limit = 12;
         else if (p->queue == 3)
-          limit = 8;
+          limit = 12;
         else
-          limit = 16;
+          limit = 12;
         p->timeInQueue = ticks - p->entryTime;
         if (p->timeInQueue >= limit)
         {
@@ -769,7 +769,7 @@ scheduler(void)
     // if the process has been in the queue for long enough, demote it
     for (p = proc; p < &proc[NPROC]; p++){
       acquire(&p->lock);
-      if (p->state == RUNNABLE || p->state == RUNNING || p->state == SLEEPING){
+      if (p->state == RUNNING || p->state == RUNNABLE){
         if (p->queue == 0)
           limit = 1;
         else if (p->queue == 1)
@@ -782,9 +782,12 @@ scheduler(void)
           limit = 16;
         if (ticks - p->entryTime >= limit && p->queue < 4)
         {
+          if (p->state == RUNNING){
+            yield();
+          }
           p->queue++;
           p->entryTime = ticks;
-          p->timeInQueue = 0;
+          p->timeInQueue = 0;          
         }
       }
       release(&p->lock);

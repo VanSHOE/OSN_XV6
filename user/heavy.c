@@ -5,9 +5,22 @@
 
 int main(int argc, char *argv[])
 {
-    for(int i = 0; i < 1000 * 500000 ; i++)
+    for(int i = 0; i < 20 ; i++)
     {
-        printf("\0");
+        int pid;
+        pid = fork();
+        pid = fork();
+        pid = fork();
+        if (pid < 0) break;
+        if (i%2 == 1) {
+            sleep (2000);
+        }
+        else {
+            for (int j = 0; j < 100000000; j++){
+                printf("\0");
+            }
+        }
+        exit(0);
     }
 
     printf("Done\n");
