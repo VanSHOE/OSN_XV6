@@ -361,7 +361,8 @@ copyout(pagetable_t pagetable, uint64 dstva, char *src, uint64 len)
   {
     return -1;
   }
-  if (va0 < 0)
+
+  if (va0 == 0)
   {
     return -1;
   }
