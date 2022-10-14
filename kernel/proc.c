@@ -573,11 +573,11 @@ age(void)
         if (p->queue == 1)
           limit = 40;
         else if (p->queue == 2)
-          limit = 40;
+          limit = 30;
         else if (p->queue == 3)
-          limit = 40;
+          limit = 25;
         else
-          limit = 40;
+          limit = 20;
         // p->timeInQueue = ticks - p->entryTime
         int waitTime = (int)(ticks - p->entryTime - p->timeRanInQueue);
 
@@ -1186,12 +1186,12 @@ procdump(void)
   #endif
   
   #ifndef MLFQ
-  printf("PID        State          Time Run       Time Slept      Name       \n");
+  // printf("PID        State          Time Run       Time Slept      Name       \n");
   #endif
 
   #ifdef MLFQ
-  printf("Procdump: Multi Level Feedback Queue Scheduler %d\n\n", ticks);
-  printf("PID        State          Queue      Time Run      Time Wait      Lastsched     Name       \n");
+  // printf("Procdump: Multi Level Feedback Queue Scheduler %d\n\n", ticks);
+  // printf("PID        State          Queue      Time Run      Time Wait      Lastsched     Name       \n");
   #endif
 
   #ifndef MLFQ
@@ -1229,35 +1229,36 @@ procdump(void)
         state = states[p->state];
       else
         state = "???     ";
-      uint waitTime = ticks - p->entryTime - p->timeRanInQueue;
+      // uint waitTime = ticks - p->entryTime - p->timeRanInQueue;
       
-      int len_pid = num_digits(p->pid);
-      int len_timerun = num_digits(p->timeRanInQueue);
-      int len_timeslept = num_digits(waitTime);
-      int len_queue = num_digits(p->queue);
-      int len_lastsched = num_digits(p->lastScheduled);
-      printf("%d", p->pid);
-      // print spaces such that the next column is aligned
-      for(int i = 0; i < 11 - len_pid; i++)
-        printf(" ");
-      printf("%s       ", state);
-      printf("%d", p->queue);
-      for(int i = 0; i < 11 - len_queue; i++)
-        printf(" ");
-      printf("%d", p->timeRanInQueue);
-      for(int i = 0; i < 14 - len_timerun; i++)
-        printf(" ");
-      printf("%d", waitTime);
-      for(int i = 0; i < 15 - len_timeslept; i++)
-        printf(" ");
-      printf("%d", p->lastScheduled);
-      for(int i = 0; i < 15 - len_lastsched; i++)
-        printf(" ");
+      // int len_pid = num_digits(p->pid);
+      // int len_timerun = num_digits(p->timeRanInQueue);
+      // int len_timeslept = num_digits(waitTime);
+      // int len_queue = num_digits(p->queue);
+      // int len_lastsched = num_digits(p->lastScheduled);
+      // printf("%d", p->pid);
+      // // print spaces such that the next column is aligned
+      // for(int i = 0; i < 11 - len_pid; i++)
+      //   printf(" ");
+      // printf("%s       ", state);
+      // printf("%d", p->queue);
+      // for(int i = 0; i < 11 - len_queue; i++)
+      //   printf(" ");
+      // printf("%d", p->timeRanInQueue);
+      // for(int i = 0; i < 14 - len_timerun; i++)
+      //   printf(" ");
+      // printf("%d", waitTime);
+      // for(int i = 0; i < 15 - len_timeslept; i++)
+      //   printf(" ");
+      // printf("%d", p->lastScheduled);
+      // for(int i = 0; i < 15 - len_lastsched; i++)
+      //   printf(" ");
 
 
-      printf("%s\n", p->name);
-      // // print comma-separated pid, queue, ticks, status
-      // printf("%d,%d,%d,%s\n", p->pid, p->queue, ticks, state);    
+      // printf("%s\n", p->name);
+      // print comma-separated pid, queue, ticks, status
+      if (p->pid > 2)
+        printf("%d,%d,%d,%s\n", p->pid, p->queue, ticks, state);    
     }
     printf("\n");
   #endif

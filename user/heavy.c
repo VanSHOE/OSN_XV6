@@ -8,14 +8,14 @@ int main(int argc, char *argv[])
 
     sleep(20);
 
-    for(int i = 0; i < 4 ; i++)
+    for(int i = 0; i < 3 ; i++)
     {
         int pid;
         pid = fork();
         // pid = fork();
         // pid = fork();
         if (pid < 0) break;
-        if (i%2 == 0) {
+        if (i == 0) {
             sleep (10);
         }
         else {
