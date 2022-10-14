@@ -622,6 +622,7 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+        p->lastScheduled = ticks; 
         swtch(&c->context, &p->context);
       
         // Process is done running for now.
@@ -652,6 +653,7 @@ scheduler(void)
       {
         min->state = RUNNING;
         c->proc = min;
+        min->lastScheduled = ticks; 
         swtch(&c->context, &min->context);
         c->proc = 0;
       }
@@ -697,6 +699,7 @@ scheduler(void)
       {
         winner->state = RUNNING;
         c->proc = winner;
+        winner->lastScheduled = ticks; 
         swtch(&c->context, &winner->context);
         c->proc = 0;
       }

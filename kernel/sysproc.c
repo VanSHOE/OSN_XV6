@@ -177,7 +177,7 @@ sys_sigalarm(void)
 
   p->alarmFreq = interval;
   p->alarmHandler = handler;
-  p->lastAlarm = ticks;
+  p->lastAlarm = 0;
 
   release(&p->lock);
 

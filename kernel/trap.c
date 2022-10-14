@@ -139,14 +139,14 @@ usertrap(void)
 
     acquire(&p->lock);
     // printf("Alarm Frequency: %d\n", p->alarmFreq);
-    if(p->alarmFreq && !p->alarmRunning && ticks - p->lastAlarm >= p->alarmFreq)
+    if(p->alarmFreq && !p->alarmRunning && p->timeRun - p->lastAlarm >= p->alarmFreq)
     {
       p->alarmRunning = 1;
       uint64 Handler;
       Handler = p->alarmHandler;
       p->backupTrapFrame = kalloc();
       memmove(p->backupTrapFrame, p->trapframe, sizeof(struct trapframe));
-      p->lastAlarm = ticks;
+      p->lastAlarm = p->timeRun;
       p->trapframe->epc = (uint64)Handler;
     }
     release(&p->lock);
@@ -236,17 +236,18 @@ kerneltrap()
     // printf("\nKernel yielding at tick: %d with process: %s\n", ticks, myproc()->name);  
     struct proc *p = myproc();
     acquire(&p->lock); 
-    if(p->alarmFreq && !p->alarmRunning && ticks - p->lastAlarm >= p->alarmFreq)
+    if(p->alarmFreq && !p->alarmRunning && p->timeRun - p->lastAlarm >= p->alarmFreq)
     {
       p->alarmRunning = 1;
       uint64 Handler;
       Handler = p->alarmHandler;
       p->backupTrapFrame = kalloc();
       memmove(p->backupTrapFrame, p->trapframe, sizeof(struct trapframe));
-      p->lastAlarm = ticks;
+      p->lastAlarm = p->timeRun;
       p->trapframe->epc = (uint64)Handler;
     }
     release(&p->lock);
+
     #if !defined(FCFS) && !defined(PBS)
     yield();
     #endif
