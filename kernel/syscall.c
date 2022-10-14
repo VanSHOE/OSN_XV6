@@ -141,8 +141,8 @@ static uint64 (*syscalls[])(void) = {
 };
 
 // LUT for system call names.
-static char *syscallnames[] = {"fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat", "chdir", "dup", "getpid", "sbrk", "sleep", "uptime", "open", "write", "mknod", "unlink", "link", "mkdir", "close", "trace", "settickets", "setpriority", "sigalarm", "sigreturn"};
-static int totalArgs[] = {0, 1, 1, 0, 3, 2, 2, 1, 1, 1, 0, 1, 1, 0, 2, 3, 3, 1, 2, 1, 1, 1, 1, 2, 2, 0};
+static char *syscallnames[] = {"fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat", "chdir", "dup", "getpid", "sbrk", "sleep", "uptime", "open", "write", "mknod", "unlink", "link", "mkdir", "close", "trace", "settickets", "setpriority", "sigalarm", "sigreturn", "waitx"};
+static int totalArgs[] = {0, 1, 1, 0, 3, 2, 2, 1, 1, 1, 0, 1, 1, 0, 2, 3, 3, 1, 2, 1, 1, 1, 1, 2, 2, 0, 3};
 
 void
 syscall(void)
