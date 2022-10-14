@@ -16,7 +16,6 @@ where `STRING` is one of the following:
 - `PBS` (Priority Based Scheduler)
 - `MLFQ` (Multi Level Feedback Queue)
 - `RR` (Round Robin)
-<br>
 
 ### Specification 1: System Calls
 
