@@ -5,22 +5,33 @@
 
 int main(int argc, char *argv[])
 {
+
+    // printf("start");
+    // for (int j = 0; j < 90000000; j++){
+    //     printf("\0");
+    // }
+    // printf("end");
+
+    // return 0;
+
     for(int i = 0; i < 20 ; i++)
     {
         int pid;
         pid = fork();
-        pid = fork();
-        pid = fork();
+        // pid = fork();
+        // pid = fork();
         if (pid < 0) break;
-        if (i%2 == 1) {
-            sleep (2000);
+        if (i%2 == 0) {
+            sleep (10);
         }
         else {
-            for (int j = 0; j < 100000000; j++){
+            printf("start");
+            for (int j = 0; j < 90000000; j++){
                 printf("\0");
             }
+            printf("end");
         }
-        exit(0);
+        // exit(0);
     }
 
     printf("Done\n");

@@ -134,6 +134,7 @@ found:
   p->lastSlept = -1;
   p->lastScheduled = 0;
   p->timeRun = 0;
+  p->timeRanInQueue = 0;
   p->timeSlept = 0;
   p->alarmFreq = 0;
   p->lastAlarm = 0;
@@ -167,7 +168,7 @@ found:
 
   p->entryTime = ticks;
   p->queue = 0;
-  p->timeInQueue = 0;
+  p->timeRanInQueue = 0;
 
   # endif
 
@@ -569,18 +570,20 @@ age(void)
       if (p->queue){
         int limit;
         if (p->queue == 1)
-          limit = 2;
+          limit = 50;
         else if (p->queue == 2)
-          limit = 12;
+          limit = 100;
         else if (p->queue == 3)
-          limit = 12;
+          limit = 150;
         else
-          limit = 12;
-        p->timeInQueue = ticks - p->entryTime;
-        if (p->timeInQueue >= limit)
+          limit = 200;
+        // p->timeInQueue = ticks - p->entryTime
+        int waitTime = (int)(ticks - p->entryTime - p->timeRanInQueue);
+
+        if (waitTime >= limit)
         {
-          p->queue--;
-          p->timeInQueue = 0;
+          p->queue--; 
+          p->timeRanInQueue = 0;
           p->entryTime = ticks;
         }
       }
@@ -763,7 +766,7 @@ scheduler(void)
     # ifdef MLFQ
 
     // aging for processes
-    age();
+    // age();
     int limit;
 
     // if the process has been in the queue for long enough, demote it
@@ -780,18 +783,16 @@ scheduler(void)
           limit = 8;
         else
           limit = 16;
-        if (ticks - p->entryTime >= limit && p->queue < 4)
+        if (p->timeRanInQueue >= limit && p->queue < 4)
         {
-          if (p->state == RUNNING){
-            yield();
-          }
           p->queue++;
           p->entryTime = ticks;
-          p->timeInQueue = 0;          
+          p->timeRanInQueue = 0;          
         }
       }
       release(&p->lock);
     }
+    age();
     
     // select the process to run
     struct proc *procToRun = 0;
@@ -938,7 +939,8 @@ scheduler(void)
       {
         procToRun->state = RUNNING;
         c->proc = procToRun;
-        procToRun->entryTime = ticks;
+        // procToRun->entryTime = ticks;
+        procToRun->lastScheduled = ticks; 
         swtch(&c->context, &procToRun->context);
         c->proc = 0;
       }
@@ -984,6 +986,7 @@ yield(void)
   acquire(&p->lock);
   p->state = RUNNABLE;
   p->timeRun += ticks - p->lastScheduled;
+  p->timeRanInQueue += ticks - p->lastScheduled;
 
   if(p->timeSlept + p->timeRun)
     p->niceness = (10 * (p->timeSlept)) / (p->timeSlept + p->timeRun);
@@ -1186,8 +1189,8 @@ procdump(void)
   #endif
 
   #ifdef MLFQ
-  printf("Procdump: Multi Level Feedback Queue Scheduler\n\n");
-  printf("PID        State          Queue      Time Run       Time Slept      Name       \n");
+  printf("Procdump: Multi Level Feedback Queue Scheduler %d\n\n", ticks);
+  printf("PID        State          Queue      Time Run       Time Wait      Lastsched                Name       \n");
   #endif
 
   #ifndef MLFQ
@@ -1226,10 +1229,13 @@ procdump(void)
         state = states[p->state];
       else
         state = "???     ";
+      uint waitTime = ticks - p->entryTime - p->timeRanInQueue;
+      
       int len_pid = num_digits(p->pid);
-      int len_timerun = num_digits(p->timeRun);
-      int len_timeslept = num_digits(p->timeSlept);
+      int len_timerun = num_digits(p->timeRanInQueue);
+      int len_timeslept = num_digits(waitTime);
       int len_queue = num_digits(p->queue);
+      int len_lastsched = num_digits(p->lastScheduled);
       printf("%d", p->pid);
       // print spaces such that the next column is aligned
       for(int i = 0; i < 11 - len_pid; i++)
@@ -1238,12 +1244,17 @@ procdump(void)
       printf("%d", p->queue);
       for(int i = 0; i < 11 - len_queue; i++)
         printf(" ");
-      printf("%d", p->timeRun);
+      printf("%d", p->timeRanInQueue);
       for(int i = 0; i < 14 - len_timerun; i++)
         printf(" ");
-      printf("%d", p->timeSlept);
+      printf("%d", waitTime);
       for(int i = 0; i < 15 - len_timeslept; i++)
         printf(" ");
+      printf("%d", p->lastScheduled);
+      for(int i = 0; i < 15 - len_lastsched; i++)
+        printf(" ");
+
+
       printf("%s\n", p->name);    
     }
     printf("\n");

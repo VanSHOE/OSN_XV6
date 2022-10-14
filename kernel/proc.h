@@ -131,7 +131,7 @@ struct proc {
 
   int queue;                   // Which queue the process is in
   int entryTime;               // When the process entered the queue
-  int timeInQueue;             // How long the process has been in the queue
+  int timeRanInQueue;             // How long the process has been in the queue
 
   # endif
 };
