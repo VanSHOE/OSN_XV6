@@ -134,7 +134,9 @@ found:
   p->lastSlept = -1;
   p->lastScheduled = 0;
   p->timeRun = 0;
+  # ifdef MLFQ
   p->timeRanInQueue = 0;
+  # endif
   p->timeSlept = 0;
   p->alarmFreq = 0;
   p->lastAlarm = 0;
@@ -986,7 +988,9 @@ yield(void)
   acquire(&p->lock);
   p->state = RUNNABLE;
   p->timeRun += ticks - p->lastScheduled;
+  # ifdef MLFQ
   p->timeRanInQueue += ticks - p->lastScheduled;
+  # endif
 
   if(p->timeSlept + p->timeRun)
     p->niceness = (10 * (p->timeSlept)) / (p->timeSlept + p->timeRun);
