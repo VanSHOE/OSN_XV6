@@ -499,6 +499,11 @@ exit(int status)
 int
 num_digits(int num)
 {
+  int is_neg = 0;
+  if (num < 0) {
+    is_neg = 1;
+    num *= -1;
+  }
   int digits = 0;
   if (num == 0)
     return 1;
@@ -506,7 +511,7 @@ num_digits(int num)
     num /= 10;
     digits++;
   }
-  return digits;
+  return digits + is_neg;
 }
 
 // Wait for a child process to exit and return its pid.
@@ -826,87 +831,93 @@ scheduler(void)
     }
 
     // loop over queue = 1 now
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->state == RUNNABLE && p->queue == 1)
+    if (!procToRun){
+      for (p = proc; p < &proc[NPROC]; p++)
       {
-        if (!procToRun)
+        acquire(&p->lock);
+        if (p->state == RUNNABLE && p->queue == 1)
         {
-          procToRun = p;
-        }
-        else
-        {
-          if (p->queue < procToRun->queue)
+          if (!procToRun)
           {
             procToRun = p;
           }
-          else if (p->queue == procToRun->queue)
+          else
           {
-            if (p->entryTime < procToRun->entryTime)
+            if (p->queue < procToRun->queue)
             {
               procToRun = p;
             }
+            else if (p->queue == procToRun->queue)
+            {
+              if (p->entryTime < procToRun->entryTime)
+              {
+                procToRun = p;
+              }
+            }
           }
         }
+        release(&p->lock);
       }
-      release(&p->lock);
     }
 
     // loop over queue = 2 now
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->state == RUNNABLE && p->queue == 2)
+    if (!procToRun){
+      for (p = proc; p < &proc[NPROC]; p++)
       {
-        if (!procToRun)
+        acquire(&p->lock);
+        if (p->state == RUNNABLE && p->queue == 2)
         {
-          procToRun = p;
-        }
-        else
-        {
-          if (p->queue < procToRun->queue)
+          if (!procToRun)
           {
             procToRun = p;
           }
-          else if (p->queue == procToRun->queue)
+          else
           {
-            if (p->entryTime < procToRun->entryTime)
+            if (p->queue < procToRun->queue)
             {
               procToRun = p;
             }
+            else if (p->queue == procToRun->queue)
+            {
+              if (p->entryTime < procToRun->entryTime)
+              {
+                procToRun = p;
+              }
+            }
           }
         }
+        release(&p->lock);
       }
-      release(&p->lock);
     }
 
     // loop over queue = 3 now
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->state == RUNNABLE && p->queue == 3)
+    if (!procToRun){
+      for (p = proc; p < &proc[NPROC]; p++)
       {
-        if (!procToRun)
+        acquire(&p->lock);
+        if (p->state == RUNNABLE && p->queue == 3)
         {
-          procToRun = p;
-        }
-        else
-        {
-          if (p->queue < procToRun->queue)
+          if (!procToRun)
           {
             procToRun = p;
           }
-          else if (p->queue == procToRun->queue)
+          else
           {
-            if (p->entryTime < procToRun->entryTime)
+            if (p->queue < procToRun->queue)
             {
               procToRun = p;
             }
+            else if (p->queue == procToRun->queue)
+            {
+              if (p->entryTime < procToRun->entryTime)
+              {
+                procToRun = p;
+              }
+            }
           }
         }
+        release(&p->lock);
       }
-      release(&p->lock);
     }
 
     // if process found yet, run it
@@ -926,22 +937,24 @@ scheduler(void)
     }
 
     // process not found in queues 0,1,2,3; now run round robin (rr) over queue 4
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE && p->queue == 4) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-      
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-      }
+    else {
+      for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if(p->state == RUNNABLE && p->queue == 4) {
+          // Switch to chosen process.  It is the process's job
+          // to release its lock and then reacquire it
+          // before jumping back to us.
+          p->state = RUNNING;
+          c->proc = p;
+          swtch(&c->context, &p->context);
+        
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          c->proc = 0;
+        }
 
-      release(&p->lock);
+        release(&p->lock);
+      }
     }
 
     # endif
@@ -1189,7 +1202,7 @@ procdump(void)
 
   #ifdef MLFQ
   printf("Procdump: Multi Level Feedback Queue Scheduler %d\n\n", ticks);
-  printf("PID        State          Queue      Time Run       Time Wait      Lastsched                Name       \n");
+  printf("PID        State          Queue      Time Run      Time Wait      Lastsched     Name       \n");
   #endif
 
   #ifndef MLFQ

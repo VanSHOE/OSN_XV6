@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 
     // return 0;
 
-    for(int i = 0; i < 20 ; i++)
+    for(int i = 0; i < 10 ; i++)
     {
         int pid;
         pid = fork();
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
         }
         else {
             printf("start");
-            for (int j = 0; j < 90000000; j++){
+            for (int j = 0; j < 50000000; j++){
                 printf("\0");
             }
             printf("end");
