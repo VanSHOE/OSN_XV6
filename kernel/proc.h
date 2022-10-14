@@ -127,11 +127,7 @@ struct proc {
   uint ctime;                   // When was the process created 
   uint etime;                   // When did the process exited
 
-  # ifdef MLFQ
-
   int queue;                   // Which queue the process is in
   int entryTime;               // When the process entered the queue
   int timeRanInQueue;             // How long the process has been in the queue
-
-  # endif
 };

@@ -134,9 +134,7 @@ found:
   p->lastSlept = -1;
   p->lastScheduled = 0;
   p->timeRun = 0;
-  # ifdef MLFQ
   p->timeRanInQueue = 0;
-  # endif
   p->timeSlept = 0;
   p->alarmFreq = 0;
   p->lastAlarm = 0;
@@ -166,13 +164,9 @@ found:
   p->etime = 0;
   p->ctime = ticks;
 
-  # ifdef MLFQ
-
   p->entryTime = ticks;
   p->queue = 0;
   p->timeRanInQueue = 0;
-
-  # endif
 
   return p;
 }
@@ -629,6 +623,7 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+        p->lastScheduled = ticks; 
         swtch(&c->context, &p->context);
       
         // Process is done running for now.
@@ -659,6 +654,7 @@ scheduler(void)
       {
         min->state = RUNNING;
         c->proc = min;
+        min->lastScheduled = ticks; 
         swtch(&c->context, &min->context);
         c->proc = 0;
       }
@@ -704,6 +700,7 @@ scheduler(void)
       {
         winner->state = RUNNING;
         c->proc = winner;
+        winner->lastScheduled = ticks; 
         swtch(&c->context, &winner->context);
         c->proc = 0;
       }
@@ -996,9 +993,7 @@ yield(void)
   acquire(&p->lock);
   p->state = RUNNABLE;
   p->timeRun += ticks - p->lastScheduled;
-  # ifdef MLFQ
   p->timeRanInQueue += ticks - p->lastScheduled;
-  # endif
 
   if(p->timeSlept + p->timeRun)
     p->niceness = (10 * (p->timeSlept)) / (p->timeSlept + p->timeRun);
@@ -1161,12 +1156,6 @@ either_copyin(void *dst, int user_src, uint64 src, uint64 len)
 void
 procdump(void)
 {
-
-  // #ifdef MLFQ
-  // while (1)
-  //   {
-  // #endif
-
   static char *states[] = {
   [UNUSED]    "Unused  ",
   [USED]      "Used    ",
@@ -1271,12 +1260,6 @@ procdump(void)
     }
     printf("\n");
   #endif
-
-  // #ifdef MLFQ
-  //   // sleep(&p->chan, &p->lock);
-  //   }
-  // #endif
-  
 }
 
 int rand(void) 
