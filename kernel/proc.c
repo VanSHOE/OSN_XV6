@@ -134,7 +134,9 @@ found:
   p->lastSlept = -1;
   p->lastScheduled = 0;
   p->timeRun = 0;
+  # ifdef MLFQ
   p->timeRanInQueue = 0;
+  # endif
   p->timeSlept = 0;
   p->alarmFreq = 0;
   p->lastAlarm = 0;
@@ -825,7 +827,8 @@ scheduler(void)
       }
       release(&p->lock);
     }
-    // loop pver queue = 1 now
+
+    // loop over queue = 1 now
     for (p = proc; p < &proc[NPROC]; p++)
     {
       acquire(&p->lock);
@@ -852,7 +855,8 @@ scheduler(void)
       }
       release(&p->lock);
     }
-    // loop pver queue = 2 now
+
+    // loop over queue = 2 now
     for (p = proc; p < &proc[NPROC]; p++)
     {
       acquire(&p->lock);
@@ -879,7 +883,8 @@ scheduler(void)
       }
       release(&p->lock);
     }
-    // loop pver queue = 3 now
+
+    // loop over queue = 3 now
     for (p = proc; p < &proc[NPROC]; p++)
     {
       acquire(&p->lock);
@@ -906,35 +911,8 @@ scheduler(void)
       }
       release(&p->lock);
     }
-    // loop pver queue = 4 now
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->state == RUNNABLE && p->queue == 4)
-      {
-        if (!procToRun)
-        {
-          procToRun = p;
-        }
-        else
-        {
-          if (p->queue < procToRun->queue)
-          {
-            procToRun = p;
-          }
-          else if (p->queue == procToRun->queue)
-          {
-            if (p->entryTime < procToRun->entryTime)
-            {
-              procToRun = p;
-            }
-          }
-        }
-      }
-      release(&p->lock);
-    }
 
-    // run the process
+    // if process found yet, run it
     if (procToRun)
     {
       acquire(&procToRun->lock);
@@ -948,6 +926,25 @@ scheduler(void)
         c->proc = 0;
       }
       release(&procToRun->lock);
+    }
+
+    // process not found in queues 0,1,2,3; now run round robin (rr) over queue 4
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE && p->queue == 4) {
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
+        p->state = RUNNING;
+        c->proc = p;
+        swtch(&c->context, &p->context);
+      
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+      }
+
+      release(&p->lock);
     }
 
     # endif
@@ -989,7 +986,9 @@ yield(void)
   acquire(&p->lock);
   p->state = RUNNABLE;
   p->timeRun += ticks - p->lastScheduled;
+  # ifdef MLFQ
   p->timeRanInQueue += ticks - p->lastScheduled;
+  # endif
 
   if(p->timeSlept + p->timeRun)
     p->niceness = (10 * (p->timeSlept)) / (p->timeSlept + p->timeRun);
