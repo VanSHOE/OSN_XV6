@@ -1186,7 +1186,7 @@ procdump(void)
   #endif
   
   #ifndef MLFQ
-  // printf("PID        State          Time Run       Time Slept      Name       \n");
+  printf("PID        State          Time Run       Time Slept      Name       \n");
   #endif
 
   #ifdef MLFQ

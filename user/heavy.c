@@ -8,10 +8,12 @@ int main(int argc, char *argv[])
 
     sleep(20);
 
-    for(int i = 0; i < 3 ; i++)
+    for(int i = 0; i < 30 ; i++)
     {
+        
         int pid;
         pid = fork();
+        set_priority(pid, 10);
         // pid = fork();
         // pid = fork();
         if (pid < 0) break;
