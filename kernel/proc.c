@@ -1222,7 +1222,6 @@ procdump(void)
   #endif
 
   #ifdef MLFQ
-  // this time, keep running the loop, sleeping for 0.5 seconds
     for(p = proc; p < &proc[NPROC]; p++){
       if(p->state == UNUSED)
         continue;
@@ -1256,7 +1255,9 @@ procdump(void)
         printf(" ");
 
 
-      printf("%s\n", p->name);    
+      printf("%s\n", p->name);
+      // // print comma-separated pid, queue, ticks, status
+      // printf("%d,%d,%d,%s\n", p->pid, p->queue, ticks, state);    
     }
     printf("\n");
   #endif

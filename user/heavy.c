@@ -6,13 +6,7 @@
 int main(int argc, char *argv[])
 {
 
-    // printf("start");
-    // for (int j = 0; j < 90000000; j++){
-    //     printf("\0");
-    // }
-    // printf("end");
-
-    // return 0;
+    sleep(20);
 
     for(int i = 0; i < 4 ; i++)
     {
