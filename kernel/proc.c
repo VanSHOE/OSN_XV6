@@ -10,14 +10,6 @@ struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
 
-#ifdef MLFQ
-struct proc q0[NPROC];
-struct proc q1[NPROC];
-struct proc q2[NPROC];
-struct proc q3[NPROC];
-struct proc q4[NPROC];
-#endif
-
 struct proc *initproc;
 
 int nextpid = 1;
@@ -770,17 +762,6 @@ scheduler(void)
 
     # ifdef MLFQ
 
-    // copy all processes from proc into q0
-    struct proc q0[NPROC];
-    int q0Size = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      q0[q0Size] = *p;
-      q0Size++;
-      release(&p->lock);
-    }
-
     // aging for processes
     age();
     int limit;
@@ -811,152 +792,142 @@ scheduler(void)
       }
       release(&p->lock);
     }
-
-    // empty q0, q1, q2, q3, q4, then copy all processes with p->queue == 0 into q0
-    for (int i = 0; i < NPROC; i++){
-      q0[i] = (struct proc){0};
-      q1[i] = (struct proc){0};
-      q2[i] = (struct proc){0};
-      q3[i] = (struct proc){0};
-      q4[i] = (struct proc){0};
-    }
-    q0Size = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->queue == 0)
-      {
-        q0[q0Size] = *p;
-        q0Size++;
-      }
-      release(&p->lock);
-    }
-
-    // copy all processes with p->queue == 1 into q1
-    int q1Size = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->queue == 1)
-      {
-        q1[q1Size] = *p;
-        q1Size++;
-      }
-      release(&p->lock);
-    }
-
-    // copy all processes with p->queue == 2 into q2
-    int q2Size = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->queue == 2)
-      {
-        q2[q2Size] = *p;
-        q2Size++;
-      }
-      release(&p->lock);
-    }
-
-    // copy all processes with p->queue == 3 into q3
-    int q3Size = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->queue == 3)
-      {
-        q3[q3Size] = *p;
-        q3Size++;
-      }
-      release(&p->lock);
-    }
-
-    // copy all processes with p->queue == 4 into q4
-    int q4Size = 0;
-    for (p = proc; p < &proc[NPROC]; p++)
-    {
-      acquire(&p->lock);
-      if (p->queue == 4)
-      {
-        q4[q4Size] = *p;
-        q4Size++;
-      }
-      release(&p->lock);
-    }
     
+    // select the process to run
     struct proc *procToRun = 0;
-    // select the process to run from q0. If there is none, select from q1, etc.
-    for (p = proc; p < &q0[NPROC]; p++)
+    for (p = proc; p < &proc[NPROC]; p++)
     {
       acquire(&p->lock);
-      if (p->state == RUNNABLE)
+      if (p->state == RUNNABLE && p->queue == 0)
       {
         if (!procToRun)
         {
           procToRun = p;
         }
+        else
+        {
+          if (p->queue < procToRun->queue)
+          {
+            procToRun = p;
+          }
+          else if (p->queue == procToRun->queue)
+          {
+            if (p->entryTime < procToRun->entryTime)
+            {
+              procToRun = p;
+            }
+          }
+        }
       }
       release(&p->lock);
     }
-    if (!procToRun)
+    // loop pver queue = 1 now
+    for (p = proc; p < &proc[NPROC]; p++)
     {
-      for (p = proc; p < &q1[NPROC]; p++)
+      acquire(&p->lock);
+      if (p->state == RUNNABLE && p->queue == 1)
       {
-        acquire(&p->lock);
-        if (p->state == RUNNABLE)
+        if (!procToRun)
         {
-          if (!procToRun)
+          procToRun = p;
+        }
+        else
+        {
+          if (p->queue < procToRun->queue)
           {
             procToRun = p;
           }
+          else if (p->queue == procToRun->queue)
+          {
+            if (p->entryTime < procToRun->entryTime)
+            {
+              procToRun = p;
+            }
+          }
         }
-        release(&p->lock);
       }
+      release(&p->lock);
     }
-    if (!procToRun)
+    // loop pver queue = 2 now
+    for (p = proc; p < &proc[NPROC]; p++)
     {
-      for (p = proc; p < &q2[NPROC]; p++)
+      acquire(&p->lock);
+      if (p->state == RUNNABLE && p->queue == 2)
       {
-        acquire(&p->lock);
-        if (p->state == RUNNABLE)
+        if (!procToRun)
         {
-          if (!procToRun)
+          procToRun = p;
+        }
+        else
+        {
+          if (p->queue < procToRun->queue)
           {
             procToRun = p;
           }
+          else if (p->queue == procToRun->queue)
+          {
+            if (p->entryTime < procToRun->entryTime)
+            {
+              procToRun = p;
+            }
+          }
         }
-        release(&p->lock);
       }
+      release(&p->lock);
     }
-    if (!procToRun)
+    // loop pver queue = 3 now
+    for (p = proc; p < &proc[NPROC]; p++)
     {
-      for (p = proc; p < &q3[NPROC]; p++)
+      acquire(&p->lock);
+      if (p->state == RUNNABLE && p->queue == 3)
       {
-        acquire(&p->lock);
-        if (p->state == RUNNABLE)
+        if (!procToRun)
         {
-          if (!procToRun)
+          procToRun = p;
+        }
+        else
+        {
+          if (p->queue < procToRun->queue)
           {
             procToRun = p;
           }
+          else if (p->queue == procToRun->queue)
+          {
+            if (p->entryTime < procToRun->entryTime)
+            {
+              procToRun = p;
+            }
+          }
         }
-        release(&p->lock);
       }
+      release(&p->lock);
     }
-    if (!procToRun)
+    // loop pver queue = 4 now
+    for (p = proc; p < &proc[NPROC]; p++)
     {
-      for (p = proc; p < &q4[NPROC]; p++)
+      acquire(&p->lock);
+      if (p->state == RUNNABLE && p->queue == 4)
       {
-        acquire(&p->lock);
-        if (p->state == RUNNABLE)
+        if (!procToRun)
         {
-          if (!procToRun)
+          procToRun = p;
+        }
+        else
+        {
+          if (p->queue < procToRun->queue)
           {
             procToRun = p;
           }
+          else if (p->queue == procToRun->queue)
+          {
+            if (p->entryTime < procToRun->entryTime)
+            {
+              procToRun = p;
+            }
+          }
         }
-        release(&p->lock);
       }
+      release(&p->lock);
     }
 
     // run the process
