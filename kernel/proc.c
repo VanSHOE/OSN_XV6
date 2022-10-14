@@ -571,13 +571,13 @@ age(void)
       if (p->queue){
         int limit;
         if (p->queue == 1)
-          limit = 50;
+          limit = 40;
         else if (p->queue == 2)
-          limit = 100;
+          limit = 40;
         else if (p->queue == 3)
-          limit = 150;
+          limit = 40;
         else
-          limit = 200;
+          limit = 40;
         // p->timeInQueue = ticks - p->entryTime
         int waitTime = (int)(ticks - p->entryTime - p->timeRanInQueue);
 
