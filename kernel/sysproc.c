@@ -144,6 +144,8 @@ sys_set_priority(void)
   returnVal = p->priority;
   p->priority = priority;
   p->niceness = 5;
+  p->timeRun = 0;
+  p->timeSlept = 0;
   release(&p->lock);
 
   if (returnVal > priority)
